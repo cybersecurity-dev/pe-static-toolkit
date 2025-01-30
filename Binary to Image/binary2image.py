@@ -1,3 +1,5 @@
+import numpy as np
+import matplotlib.pyplot as plt
 import os
 import math
 from PIL import Image
@@ -27,43 +29,45 @@ def get_size(data_length, width=None):
         height = width
     return (width, height)
 
-#Convert binary file to an image representation.
-def binary_to_image(input_file, output_file, mode='RGB', scale=None):
-    """   
-    :param input_file: Path to the binary file.
-    :param output_file: Path to save the output image (PNG or SVG).
-    :param mode: 'RGB' for color or 'L' for grayscale.
-    :param scale: Resize scale (tuple width, height) or None for automatic.
+def convertBinary2GreyScaleImage(input_file, output_file, scale=None):
+    """
+    Convert binary file to a grayscale image representation.
     """
     with open(input_file, 'rb') as f:
         data = f.read()
     
     data_array = np.frombuffer(data, dtype=np.uint8)
+    width, height = get_size(len(data_array))
     
-    # Determine image dimensions
-    width, height = get_size(len(data_array) // (3 if mode == 'RGB' else 1))
+    padded_data = np.pad(data_array, (0, width * height - len(data_array)), mode='constant')
+    image_data = padded_data.reshape((height, width))
     
-    if mode == 'RGB':
-        padded_data = np.pad(data_array, (0, width * height * 3 - len(data_array)), mode='constant')
-        image_data = padded_data.reshape((height, width, 3))
-    else:  # Grayscale
-        padded_data = np.pad(data_array, (0, width * height - len(data_array)), mode='constant')
-        image_data = padded_data.reshape((height, width))
-    
-    img = Image.fromarray(image_data, mode=mode)
-    
+    img = Image.fromarray(image_data, mode='L')
     if scale:
         img = img.resize(scale, Image.NEAREST)
+    img.save(output_file)
+    print(f"Grayscale image saved to {output_file}")
+
+def convertBinary2RGBImage(input_file, output_file, scale=None):
+    """
+    Convert binary file to an RGB image representation.
+    """
+    with open(input_file, 'rb') as f:
+        data = f.read()
     
-    # Save image
-    if output_file.lower().endswith('.svg'):
-        plt.imsave(output_file, image_data, cmap='gray' if mode == 'L' else None, format='svg')
-    else:
-        img.save(output_file)
+    data_array = np.frombuffer(data, dtype=np.uint8)
+    width, height = get_size(len(data_array) // 3)
     
-    print(f"Image saved to {output_file}")
+    padded_data = np.pad(data_array, (0, width * height * 3 - len(data_array)), mode='constant')
+    image_data = padded_data.reshape((height, width, 3))
+    
+    img = Image.fromarray(image_data, mode='RGB')
+    if scale:
+        img = img.resize(scale, Image.NEAREST)
+    img.save(output_file)
+    print(f"RGB image saved to {output_file}")
 
 # Example Usage
 if __name__ == "__main__":
-    binary_to_image('test.exe', 'output.png', mode='RGB')  # Convert to PNG
-    binary_to_image('test.exe', 'output.svg', mode='L')    # Convert to SVG (grayscale)
+    convertBinary2RGBImage('test.exe', 'output.png',)  # Convert to RGB PNG
+    convertBinary2GreyScaleImage('test.exe', 'output.svg')  # Convert to Grayscale SVG
