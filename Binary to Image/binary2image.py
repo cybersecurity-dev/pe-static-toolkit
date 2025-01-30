@@ -67,7 +67,23 @@ def convertBinary2RGBImage(input_file, output_file, scale=None):
     img.save(output_file)
     print(f"RGB image saved to {output_file}")
 
+def convertDirectoryBinaries(directory):
+    """
+    Convert all binary files in a directory to both RGB and grayscale images in PNG and SVG formats.
+    """
+    if not os.path.isdir(directory):
+        print(f"Error: {directory} is not a valid directory.")
+        return
+    
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path):
+            base_name, _ = os.path.splitext(filename)
+            convertBinary2RGBImage(file_path, os.path.join(directory, f"{base_name}_RGB.png"))
+            convertBinary2RGBImage(file_path, os.path.join(directory, f"{base_name}_RGB.svg"))
+            convertBinary2GreyScaleImage(file_path, os.path.join(directory, f"{base_name}_Grayscale.png"))
+            convertBinary2GreyScaleImage(file_path, os.path.join(directory, f"{base_name}_Grayscale.svg"))
+
 # Example Usage
 if __name__ == "__main__":
-    convertBinary2RGBImage('test.exe', 'output.png',)  # Convert to RGB PNG
-    convertBinary2GreyScaleImage('test.exe', 'output.svg')  # Convert to Grayscale SVG
+    convertDirectoryBinaries("/path/of/binaries/")
