@@ -1,13 +1,35 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import os
+import math
 from PIL import Image
 
+def get_size(data_length, width=None):
+    if width is None:  # If no width is specified
+        size = data_length
+        if size < 10240:
+            width = 32
+        elif 10240 <= size <= 10240 * 3:
+            width = 64
+        elif 10240 * 3 <= size <= 10240 * 6:
+            width = 128
+        elif 10240 * 6 <= size <= 10240 * 10:
+            width = 256
+        elif 10240 * 10 <= size <= 10240 * 20:
+            width = 384
+        elif 10240 * 20 <= size <= 10240 * 50:
+            width = 512
+        elif 10240 * 50 <= size <= 10240 * 100:
+            width = 768
+        else:
+            width = 1024
+        height = int(size / width) + 1
+    else:
+        width = int(math.sqrt(data_length)) + 1
+        height = width
+    return (width, height)
 
+#Convert binary file to an image representation.
 def binary_to_image(input_file, output_file, mode='RGB', scale=None):
-    """
-    Convert binary file to an image representation.
-    
+    """   
     :param input_file: Path to the binary file.
     :param output_file: Path to save the output image (PNG or SVG).
     :param mode: 'RGB' for color or 'L' for grayscale.
@@ -18,15 +40,15 @@ def binary_to_image(input_file, output_file, mode='RGB', scale=None):
     
     data_array = np.frombuffer(data, dtype=np.uint8)
     
-    # Determine image dimensions (nearest square size)
-    size = int(np.ceil(np.sqrt(len(data_array) / (3 if mode == 'RGB' else 1))))
+    # Determine image dimensions
+    width, height = get_size(len(data_array) // (3 if mode == 'RGB' else 1))
     
     if mode == 'RGB':
-        padded_data = np.pad(data_array, (0, size * size * 3 - len(data_array)), mode='constant')
-        image_data = padded_data.reshape((size, size, 3))
+        padded_data = np.pad(data_array, (0, width * height * 3 - len(data_array)), mode='constant')
+        image_data = padded_data.reshape((height, width, 3))
     else:  # Grayscale
-        padded_data = np.pad(data_array, (0, size * size - len(data_array)), mode='constant')
-        image_data = padded_data.reshape((size, size))
+        padded_data = np.pad(data_array, (0, width * height - len(data_array)), mode='constant')
+        image_data = padded_data.reshape((height, width))
     
     img = Image.fromarray(image_data, mode=mode)
     
