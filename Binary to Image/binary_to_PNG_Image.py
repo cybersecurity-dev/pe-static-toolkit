@@ -80,9 +80,7 @@ def convertDirectoryBinaries(directory):
         if os.path.isfile(file_path):
             base_name, _ = os.path.splitext(filename)
             convertBinary2RGBImage(file_path, os.path.join(directory, f"{base_name}_RGB.png"))
-            convertBinary2RGBImage(file_path, os.path.join(directory, f"{base_name}_RGB.svg"))
             convertBinary2GreyScaleImage(file_path, os.path.join(directory, f"{base_name}_Grayscale.png"))
-            convertBinary2GreyScaleImage(file_path, os.path.join(directory, f"{base_name}_Grayscale.svg"))
 
 # Example Usage
 if __name__ == "__main__":
