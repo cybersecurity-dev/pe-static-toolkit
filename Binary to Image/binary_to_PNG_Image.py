@@ -3,6 +3,14 @@ import matplotlib.pyplot as plt
 import os
 import math
 from PIL import Image
+from queue import Queue
+from threading import Thread
+import argparse
+import sys
+
+def read_binary_file(file_path):
+    with open(file_path, 'rb') as f:
+        return f.read()
 
 def get_size(data_length, width=None):
     if width is None:  # If no width is specified
@@ -33,8 +41,7 @@ def convertBinary2GreyScaleImage(input_file, output_file, scale=None):
     """
     Convert binary file to a grayscale image representation.
     """
-    with open(input_file, 'rb') as f:
-        data = f.read()
+    data = read_binary_file(input_file)
     
     data_array = np.frombuffer(data, dtype=np.uint8)
     width, height = get_size(len(data_array))
@@ -52,8 +59,7 @@ def convertBinary2RGBImage(input_file, output_file, scale=None):
     """
     Convert binary file to an RGB image representation.
     """
-    with open(input_file, 'rb') as f:
-        data = f.read()
+    data = read_binary_file(input_file)
     
     data_array = np.frombuffer(data, dtype=np.uint8)
     width, height = get_size(len(data_array) // 3)
@@ -67,21 +73,35 @@ def convertBinary2RGBImage(input_file, output_file, scale=None):
     img.save(output_file)
     print(f"RGB image saved to {output_file}")
 
-def convertDirectoryBinaries(directory):
-    """
-    Convert all binary files in a directory to both RGB and grayscale images in PNG and SVG formats.
-    """
-    if not os.path.isdir(directory):
-        print(f"Error: {directory} is not a valid directory.")
-        return
-    
-    for filename in os.listdir(directory):
-        file_path = os.path.join(directory, filename)
+def run(file_queue, width):
+    while not file_queue.empty():
+        file_path = file_queue.get()
+        base_name, _ = os.path.splitext(file_path)
+        directory = os.path.dirname(file_path)
+        convertBinary2RGBImage(file_path, os.path.join(directory, f"{base_name}_RGB.png"))
+        convertBinary2GreyScaleImage(file_path, os.path.join(directory, f"{base_name}_Grayscale.png"))
+        file_queue.task_done()
+
+
+def main(input_dir, thread_number=2, width=None):
+	# Get all executable files in input directory and add them into queue
+    file_queue = Queue()
+    for filename in os.listdir(input_dir):
+        file_path = os.path.join(input_dir, filename)
         if os.path.isfile(file_path):
             base_name, _ = os.path.splitext(filename)
-            convertBinary2RGBImage(file_path, os.path.join(directory, f"{base_name}_RGB.png"))
-            convertBinary2GreyScaleImage(file_path, os.path.join(directory, f"{base_name}_Grayscale.png"))
+            file_queue.put(file_path)
 
-# Example Usage
-if __name__ == "__main__":
-    convertDirectoryBinaries("/path/of/binaries/")
+	# Start thread
+    for index in range(thread_number):
+        thread = Thread(target=run, args=(file_queue, width))
+        thread.daemon = True
+        thread.start()
+    file_queue.join()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(prog='binary_to_PNG_Image.py', description="Convert binary file to SVG image")
+    parser.add_argument('input_dir', help='Input directory path is which include executable files')
+    parser.add_argument('thread_number', help='number of operation threads')
+    args = parser.parse_args()
+    main(args.input_dir, int(args.thread_number), width=None)
