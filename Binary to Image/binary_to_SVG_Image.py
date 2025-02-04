@@ -1,4 +1,4 @@
-import os
+import os, time
 import argparse
 import sys
 import numpy as np
@@ -129,6 +129,8 @@ def main(input_dir, thread_number=2, width=None):
     file_queue.join()
 
 if __name__ == '__main__':
+    print("[" + __file__ + "]'s last modified: %s" % time.ctime(os.path.getmtime(__file__)))
+    # Check if a parameter is provided
     parser = argparse.ArgumentParser(prog='binary_to_SVG_Image.py', description="Convert binary file to SVG image")
     parser.add_argument('input_dir', help='Input directory path is which include executable files')
     parser.add_argument('thread_number', help='number of operation threads')
